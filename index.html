@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Teams Troubleshooting Mastery - Interactive Flashcards</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { Wifi, AlertTriangle, CheckCircle } = lucide;
+
+        const TEAMS_SCENARIOS = [
+          {
+            id: 1,
+            issue: "Intermittent Teams search failures & slow messaging",
+            symptoms: [
+              "Users report slow or failed message searches",
+              "Search engine response 'shaky'—sometimes results, sometimes errors",
+              "Delayed chat delivery during peak hours (e.g., large meetings)"
+            ],
+            yourDiagnosis: "Network latency, bandwidth bottleneck, and backend database query delays",
+            troubleshootingSteps: [
+              {
+                step: "Measure network latency and packet loss between endpoints and Teams infrastructure",
+                tools: "Azure Network Watcher, traceroute, ping, Teams call analytics dashboard",
+                whatYouFound: "Significant latency spikes and packet loss during large meetings"
+              },
+              {
+                step: "Monitor Teams bandwidth and traffic shaping effectiveness",
+                tools: "Enterprise network monitoring, QoS logs, Azure Monitor",
+                whatYouFound: "Teams reaching bandwidth saturation at 1000+ user events"
+              },
+              {
+                step: "Analyze Teams backend database query metrics",
+                tools: "Application Insights, SQL query stats, Teams admin search logs",
+                whatYouFound: "Frequent slow queries (5–10s) and periodic search index lags"
+              },
+              {
+                step: "Audit firewall and QoS policies for prioritizing Teams real-time traffic",
+                tools: "Firewall/NGFW logs, QoS config, NSG settings",
+                whatYouFound: "Teams ports not prioritized—contending with bulk traffic"
+              }
+            ],
+            solution: {
+              immediate: "Adjusted QoS/firewall to prioritize Teams traffic and reduce latency",
+              shortTerm: "Optimized database queries and rebuilt indexes for faster search",
+              longTerm: "Planned CDN rollout for static Teams resources and bandwidth upgrades for large meetings"
+            },
+            keyLessons: [
+              "Troubleshooting real-time apps means checking network and backend together",
+              "Bandwidth and search query optimization go hand-in-hand",
+              "CDNs and QoS are essential for agency-wide large-scale meetings"
+            ]
+          },
+          {
+            id: 2,
+            issue: "Remote users blocked from Teams via VPN",
+            symptoms: [
+              "VPN-connected users having Teams authentication failures",
+              "Channels disconnecting intermittently",
+              "Mobile and direct internet users unaffected"
+            ],
+            yourDiagnosis: "VPN split-tunneling misconfig and firewall blocks on Teams endpoints",
+            troubleshootingSteps: [
+              {
+                step: "Check VPN concentrator logs and split-tunneling configuration",
+                tools: "VPN management console, Azure Virtual WAN diagnostics",
+                whatYouFound: "All Teams traffic forced through VPN, saturating tunnel"
+              },
+              {
+                step: "Validate firewall rules for Teams service IPs and domains",
+                tools: "Firewall config tools, NSG, endpoint testing",
+                whatYouFound: "Teams endpoints missing from whitelist"
+              },
+              {
+                step: "Analyze Azure AD authentication logs for token and MFA errors",
+                tools: "Azure Entra ID > Sign-in logs, Teams admin center",
+                whatYouFound: "Token renewal and MFA timeouts for VPN users"
+              },
+              {
+                step: "Test access on direct internet vs VPN",
+                tools: "Laptop/mobile direct connection, compare with VPN",
+                whatYouFound: "Issues only on VPN path; direct worked fine"
+              }
+            ],
+            solution: {
+              immediate: "Whitelisted Teams endpoints and enabled split-tunneling for Teams traffic",
+              shortTerm: "Raised VPN capacity and adjusted authentication timeouts for Teams users",
+              longTerm: "Cloud-first network model with less VPN dependence"
+            },
+            keyLessons: [
+              "Always verify network path and access controls for cloud apps",
+              "Split-tunneling is critical for real-time SaaS (like Teams)",
+              "Firewall whitelisting must be audited regularly for new endpoints"
+            ]
+          },
+          {
+            id: 3,
+            issue: "Large Teams meetings cause video/audio degradation",
+            symptoms: [
+              "Sessions with 500+ users yield video freezes",
+              "Audio dropouts reported agency-wide",
+              "Random disconnects as meeting size increases"
+            ],
+            yourDiagnosis: "Bandwidth saturation, lack of CDN/eCDN scaling, and network congestion",
+            troubleshootingSteps: [
+              {
+                step: "Monitor WAN and LAN bandwidth during large meeting events",
+                tools: "Azure Monitor, Network Watcher, NetFlow, traffic graphs",
+                whatYouFound: "Link saturation with ongoing packet loss"
+              },
+              {
+                step: "Check Teams cloud VM/endpoint scaling",
+                tools: "Teams admin center, Azure Monitor VM metrics",
+                whatYouFound: "No immediate compute bottleneck—mainly network"
+              },
+              {
+                step: "Evaluate Teams meeting policies for video/audio settings",
+                tools: "Teams policies admin portal",
+                whatYouFound: "No restrictions on video stream size in large meetings"
+              },
+              {
+                step: "Examine meeting QoS, traffic patterns",
+                tools: "Call quality dashboard, flow analytics",
+                whatYouFound: "QoS misprioritizing non-video traffic"
+              }
+            ],
+            solution: {
+              immediate: "Applied meeting policy to reduce video stream quality in large meetings",
+              shortTerm: "Rescheduled mega-meetings for off-peak and split groups",
+              longTerm: "Initiated eCDN and CDN deployment for global scale alongside bandwidth upgrades"
+            },
+            keyLessons: [
+              "Bandwidth is top limiter for large collaboration meetings",
+              "Scaling policies (video/audio) are vital for reliability",
+              "CDN/eCDN required for high-scale global Teams traffic"
+            ]
+          },
+          {
+            id: 4,
+            issue: "Teams endpoints fail DNS resolution intermittently",
+            symptoms: [
+              "Some users see 'cannot connect to Teams' errors",
+              "Features break randomly across regions/site locations",
+              "Chat and video work for some, not others"
+            ],
+            yourDiagnosis: "Hybrid/on-prem DNS misconfig with split DNS errors between Azure/legacy",
+            troubleshootingSteps: [
+              {
+                step: "Test DNS resolution from affected and unaffected endpoints",
+                tools: "nslookup, dig, PowerShell DNS cmdlets",
+                whatYouFound: "Partial/incorrect DNS responses for Teams FQDNs"
+              },
+              {
+                step: "Review DNS server and zone setup (on-prem/hybrid)",
+                tools: "Windows DNS server logs, Azure DNS dashboard",
+                whatYouFound: "Split DNS misrouting Azure-specific queries"
+              },
+              {
+                step: "Audit Azure DNS/NSG integration",
+                tools: "Azure DNS config, NSG settings",
+                whatYouFound: "On-prem DNS not forwarding to Azure DNS correctly"
+              },
+              {
+                step: "Attempt from multiple VLANs/segments",
+                tools: "VLAN testing, group policy review",
+                whatYouFound: "Location/segment-specific DNS errors"
+              }
+            ],
+            solution: {
+              immediate: "Fixed DNS rules for Teams endpoints (forwarders, site-specific config)",
+              shortTerm: "Documented hybrid DNS configuration for future-proofing",
+              longTerm: "Unified DNS architecture across Azure and on-prem for all cloud apps"
+            },
+            keyLessons: [
+              "Cloud/hybrid DNS must be coordinated and documented",
+              "DNS errors show up as intermittent app failures—not just total outage",
+              "Test diverse endpoints and segments when troubleshooting cloud"
+            ]
+          }
+        ];
+
+        const Icon = ({ name, size = 24, className = "" }) => {
+          return React.createElement(lucide[name], { size, className });
+        };
+
+        function TeamsTroubleshootingMastery() {
+          const [selectedScenario, setSelectedScenario] = useState(0);
+          const [revealedSteps, setRevealedSteps] = useState([]);
+          const [showSolution, setShowSolution] = useState(false);
+
+          const scenario = TEAMS_SCENARIOS[selectedScenario];
+
+          const toggleStep = (index) => {
+            setRevealedSteps(revealedSteps.includes(index)
+              ? revealedSteps.filter(i => i !== index)
+              : [...revealedSteps, index]);
+          };
+
+          const revealAll = () => {
+            setRevealedSteps(scenario.troubleshootingSteps.map((_, idx) => idx));
+            setShowSolution(true);
+          };
+
+          const resetScenario = () => {
+            setRevealedSteps([]);
+            setShowSolution(false);
+          };
+
+          return (
+            <div className="min-h-screen p-6" style={{ backgroundColor: '#1e293b' }}>
+              <div className="max-w-5xl mx-auto">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white p-8 rounded-2xl mb-6 shadow-xl">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Icon name="Wifi" size={36} />
+                    <h1 className="text-4xl font-bold">Microsoft Teams Troubleshooting Mastery</h1>
+                  </div>
+                  <p className="text-purple-100">Network & Query Mastery Scenarios for Agency-wide Deployments</p>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3 mb-6">
+                  {TEAMS_SCENARIOS.map((sc, idx) => (
+                    <button
+                      key={sc.id}
+                      onClick={() => { setSelectedScenario(idx); resetScenario(); }}
+                      className={`p-4 rounded-xl font-semibold transition-all text-sm ${
+                        selectedScenario === idx
+                          ? 'bg-white shadow-lg scale-105 text-gray-800'
+                          : 'bg-white/20 text-white hover:bg-white/30'
+                      }`}
+                    >
+                      <Icon name="AlertTriangle" size={24} className={`mx-auto mb-2 ${selectedScenario === idx ? 'text-red-600' : 'text-white'}`} />
+                      <div className="text-xs leading-tight">Scenario {sc.id}</div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+                  <div className="mb-6 bg-red-50 border-2 border-red-400 rounded-xl p-6">
+                    <h2 className="text-sm font-bold text-red-800 mb-2">🚨 THE ISSUE:</h2>
+                    <p className="text-2xl font-bold text-gray-800 mb-4">{scenario.issue}</p>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-red-800">Symptoms:</h3>
+                      {scenario.symptoms.map((symptom, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-gray-700">
+                          <span className="text-red-600">•</span>
+                          <span>{symptom}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6 bg-blue-50 border-2 border-blue-400 rounded-xl p-5">
+                    <h3 className="font-bold text-blue-800 mb-2">🔍 Your Diagnosis:</h3>
+                    <p className="text-gray-800">{scenario.yourDiagnosis}</p>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-xl text-gray-800">🛠️ Troubleshooting Steps:</h3>
+                      <button
+                        onClick={revealAll}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-all text-sm"
+                      >Reveal All</button>
+                    </div>
+                    <div className="space-y-3">
+                      {scenario.troubleshootingSteps.map((s, idx) => (
+                        <div key={idx} className="border-2 border-gray-300 rounded-xl overflow-hidden">
+                          <button
+                            onClick={() => toggleStep(idx)}
+                            className="w-full bg-gray-50 p-4 text-left hover:bg-gray-100 transition-all"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                                  {idx + 1}
+                                </span>
+                                <span className="font-semibold text-gray-800">{s.step}</span>
+                              </div>
+                              <span className="text-gray-600">
+                                {revealedSteps.includes(idx) ? '▼' : '▶'}
+                              </span>
+                            </div>
+                          </button>
+                          {revealedSteps.includes(idx) && (
+                            <div className="p-5 bg-white space-y-3 animate-fadeIn">
+                              <div>
+                                <h4 className="font-semibold text-purple-800 mb-1">Tools Used:</h4>
+                                <p className="text-sm text-gray-700">{s.tools}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-green-800 mb-1">What You Found:</h4>
+                                <p className="text-sm text-gray-700">{s.whatYouFound}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {showSolution && (
+                    <div className="mb-6 animate-fadeIn">
+                      <h3 className="font-bold text-xl text-gray-800 mb-4">✅ Your Solution:</h3>
+                      <div className="space-y-3">
+                        <div className="bg-green-50 border-l-4 border-green-600 p-4">
+                          <h4 className="font-bold text-green-800 mb-1">Immediate Action:</h4>
+                          <p className="text-gray-700">{scenario.solution.immediate}</p>
+                        </div>
+                        <div className="bg-blue-50 border-l-4 border-blue-600 p-4">
+                          <h4 className="font-bold text-blue-800 mb-1">Short-Term Fix:</h4>
+                          <p className="text-gray-700">{scenario.solution.shortTerm}</p>
+                        </div>
+                        <div className="bg-purple-50 border-l-4 border-purple-600 p-4">
+                          <h4 className="font-bold text-purple-800 mb-1">Long-Term Strategy:</h4>
+                          <p className="text-gray-700">{scenario.solution.longTerm}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {showSolution && (
+                    <div className="bg-yellow-50 border border-yellow-400 rounded-xl p-5 animate-fadeIn">
+                      <h3 className="font-bold text-yellow-900 mb-2">💡 Key Lessons:</h3>
+                      <ul className="space-y-1">
+                        {scenario.keyLessons.map((lesson, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-gray-700">
+                            <Icon name="CheckCircle" size={16} className="text-green-600 flex-shrink-0" />
+                            <span className="text-sm">{lesson}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={resetScenario}
+                    className="w-full mt-6 py-3 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-700 transition-all"
+                  >
+                    Reset Scenario
+                  </button>
+                </div>
+
+                <div className="mt-6 bg-white/10 text-white rounded-xl p-4 text-sm">
+                  <p><strong>ADHD Study Tip:</strong> Focus on one scenario pattern (Issue → Systematic diagnosis → Multi-layered solution → Lesson learned). Interactive steps, visual logic, and quick resets fight overwhelm!</p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<TeamsTroubleshootingMastery />, document.getElementById('root'));
+    </script>
+</body>
+</html>
